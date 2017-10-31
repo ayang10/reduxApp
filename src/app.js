@@ -1,66 +1,23 @@
 "use strict"
 import { createStore } from 'redux';
 
+// import combined reducers
+import reducers from './reducers/index';
 
-//step 3 define reducers
-const reducer = function(state = {books: []}, action) {
-    switch(action.type){
-        case "POST_BOOK":
-        let books = state.books.concat(action.payload);
-        return {books};
-        break;
-
-        case "DELETE_BOOK":
-        //create a copy of the current array of books
-        const currentBookToDelete = [...state.books];
-        // Determine at which index in books array is the book to be deleted
-        const indexToDelete = currentBookToDelete.findIndex(
-            function(book) {
-                return book.id === action.payload.id;
-            }
-        )
-        //use slice to remove the book at the specified index
-        return { books: [...currentBookToDelete.slice(0, indexToDelete), 
-            ...currentBookToDelete.slice(indexToDelete + 1)] }
-            break;
-
-        case "UPDATE_BOOK":
-        // Create a copy of the current array of books array is the book to be deleted
-        const currentBookToUpdate = [...state.books];
-        // Determine at which index in books array is the book to be deleted
-        const indexToUpdate = currentBookToUpdate.findIndex(
-            function(book) {
-                return book.id === action.payload.id;
-            }
-        )
-        // Create a new book object with the new values and with the same array index of the item we want
-        // to replace. To achieve this we will use ...spread but we could use concat methos too
-        const newBookToUpdate = {
-            ...currentBookToUpdate[indexToUpdate],
-            title: action.payload.title
-        }
-        // This Log has the purpose to show you how newBookToUpdate looks like
-        console.log("what is it newBookToUpdate", newBookToUpdate);
-        // use slice to remove the book at the specified index, replace with the new object and concatenate
-        // with the rest of items in the array
-        return { books: [...currentBookToUpdate.slice(0, indexToUpdate), newBookToUpdate, ...currentBookToUpdate.slice(indexToUpdate + 1)]}
-        break;
-        
-    }
-    return state
-}
+// IMPORT actions
+import { addToCart } from './actions/cartActions';   
+import { postBooks, deleteBooks, updateBooks } from './actions/booksActions';
 
 // Step 1 create the store
-const store = createStore(reducer);
+const store = createStore(reducers);
 
 store.subscribe(function() {
     console.log('current state is: ', store.getState());
 })
 
-// step 1 create and distach action
-store.dispatch({ 
-    type: "POST_BOOK", 
-    payload: [
+// step 2 create and distach action
+store.dispatch(postBooks(
+    [
         {
             id: 1,
             title: 'this is the book title',
@@ -74,23 +31,23 @@ store.dispatch({
             price: 50
         }
     ]
-})
-
+))
 
 // DELETE a book
-store.dispatch({ 
-    type: "DELETE_BOOK", 
-    payload: 
-        {
-            id: 1
-        }
-})
+store.dispatch(deleteBooks(
+    {id: 1}
+))
 
 //UPDATE a book
-store.dispatch({
-    type: "UPDATE_BOOK",
-    payload: {
+store.dispatch(updateBooks(
+    {
         id: 2,
         title: 'Learn React in 24h'
     }
-})
+))
+
+
+
+// -->> Cart actions
+// Add to cart
+store.dispatch(addToCart([{id: 1}]))
