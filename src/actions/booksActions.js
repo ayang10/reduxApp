@@ -1,10 +1,9 @@
 "use strict"
 
-// POST A BOOK
-export function postBooks(book){
+// Get A BOOK
+export function getBooks(){
     return { 
-            type: "POST_BOOK", 
-            payload: book
+            type: "GET_BOOKS"
         }
 }
 
