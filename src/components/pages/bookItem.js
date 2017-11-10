@@ -14,7 +14,7 @@ class BookItem extends Component {
             price: this.props.price,
             quantity: 1
         }]
-        // CEHCIS EMPTY
+        // CHECK IF CART IS EMPTY
         if(this.props.cart.length > 0) {
             // CART IS NOT EMPTY
             let _id = this.props._id;
