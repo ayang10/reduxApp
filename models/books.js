@@ -3,7 +3,7 @@ var mongoose = require('mongoose');
 
 var booksSchema = mongoose.Schema({
     title: String,
-    descript: String,
+    description: String,
     images: String, 
     price: Number
 });
