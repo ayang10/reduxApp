@@ -27,8 +27,8 @@ class BookItem extends Component {
                 this.props.addToCart(book);
             }
             else {
-                // WE NEED A NEW REDUC
-                this.props.updateCart(_id, 1);
+                // WE NEED TO UPDATE QUANTITY
+                this.props.updateCart(_id, 1, this.props.cart);
             }
         } 
         else {

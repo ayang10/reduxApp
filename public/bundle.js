@@ -5433,33 +5433,76 @@ var go = exports.go = function go(n) {
 "use strict";
 
 
-// ADD TO CART 
-
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.getCart = getCart;
 exports.addToCart = addToCart;
 exports.updateCart = updateCart;
 exports.deleteCartItem = deleteCartItem;
-function addToCart(book) {
-    return {
-        type: "ADD_TO_CART",
-        payload: book
+
+var _axios = __webpack_require__(260);
+
+var _axios2 = _interopRequireDefault(_axios);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+// GET CART 
+function getCart() {
+    return function (dispatch) {
+        _axios2.default.get('/api/cart').then(function (response) {
+            dispatch({ type: "GET_CART", payload: response.data });
+        }).catch(function (err) {
+            dispatch({ type: "GET_CART_REJECTED", msg: "error when getting the cart from session" });
+        });
+    };
+}
+// ADD TO CART 
+function addToCart(cart) {
+    return function (dispatch) {
+        _axios2.default.post("/api/cart", cart).then(function (response) {
+            dispatch({ type: "ADD_TO_CART", payload: response.data });
+        }).catch(function (err) {
+            dispatch({ type: "ADD_TO_CART_REJECTED", msg: 'error when adding to the cart' });
+        });
     };
 }
 // UPDATE TO CART 
-function updateCart(_id, unit) {
-    return {
-        type: "UPDATE_CART",
-        _id: _id,
-        unit: unit
+function updateCart(_id, unit, cart) {
+    // Create a copy of the current array of books array is the book to be deleted
+    var currentBookToUpdate = cart;
+    // Determine at which index in books array is the book to be deleted
+    var indexToUpdate = currentBookToUpdate.findIndex(function (book) {
+        return book._id === _id;
+    });
+
+    var newBookToUpdate = _extends({}, currentBookToUpdate[indexToUpdate], {
+        quantity: currentBookToUpdate[indexToUpdate].quantity + unit
+    });
+
+    var cartUpdate = [].concat(_toConsumableArray(currentBookToUpdate.slice(0, indexToUpdate)), [newBookToUpdate], _toConsumableArray(currentBookToUpdate.slice(indexToUpdate + 1)));
+
+    return function (dispatch) {
+        _axios2.default.post("/api/cart", cartUpdate).then(function (response) {
+            dispatch({ type: "UPDATE_CART", payload: response.data });
+        }).catch(function (err) {
+            dispatch({ type: "UPDATE_CART_REJECTED", msg: 'error when adding to the cart' });
+        });
     };
 }
 // DELETE TO CART 
 function deleteCartItem(cart) {
-    return {
-        type: "DELETE_CART_ITEM",
-        payload: cart
+    return function (dispatch) {
+        _axios2.default.post("/api/cart", cart).then(function (response) {
+            dispatch({ type: "DELETE_CART_ITEM", payload: response.data });
+        }).catch(function (err) {
+            dispatch({ type: "DELETE_CART_ITEM_REJECTED", msg: 'error when deleting an item from to the cart' });
+        });
     };
 }
 
@@ -13085,6 +13128,11 @@ var Cart = function (_Component) {
     _inherits(Cart, _Component);
 
     _createClass(Cart, [{
+        key: 'componentDidMount',
+        value: function componentDidMount() {
+            this.props.getCart();
+        }
+    }, {
         key: 'onDelete',
         value: function onDelete(_id) {
             //create a copy of the current array of books
@@ -13101,13 +13149,13 @@ var Cart = function (_Component) {
     }, {
         key: 'onIncrement',
         value: function onIncrement(_id) {
-            this.props.updateCart(_id, 1);
+            this.props.updateCart(_id, 1, this.props.cart);
         }
     }, {
         key: 'onDecrement',
         value: function onDecrement(_id, quantity) {
             if (quantity > 1) {
-                this.props.updateCart(_id, -1);
+                this.props.updateCart(_id, -1, this.props.cart);
             }
         }
     }]);
@@ -13315,8 +13363,8 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
     return (0, _redux.bindActionCreators)({
         deleteCartItem: _cartActions.deleteCartItem,
-        addToCart: _cartActions.addToCart,
-        updateCart: _cartActions.updateCart
+        updateCart: _cartActions.updateCart,
+        getCart: _cartActions.getCart
     }, dispatch);
 }
 
@@ -38104,14 +38152,17 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 exports.cartReducers = cartReducers;
 exports.totals = totals;
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 function cartReducers() {
     var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { cart: [] };
     var action = arguments[1];
 
     switch (action.type) {
+        case "GET_CART":
+            return _extends({}, state, {
+                cart: action.payload,
+                totalAmount: totals(action.payload).amount,
+                totalQty: totals(action.payload).qty
+            });
         case "ADD_TO_CART":
             return _extends({}, state, {
                 cart: action.payload,
@@ -38120,23 +38171,10 @@ function cartReducers() {
             });
             break;
         case "UPDATE_CART":
-            // Create a copy of the current array of books array is the book to be deleted
-            var currentBookToUpdate = [].concat(_toConsumableArray(state.cart));
-            // Determine at which index in books array is the book to be deleted
-            var indexToUpdate = currentBookToUpdate.findIndex(function (book) {
-                return book._id === action._id;
-            });
-
-            var newBookToUpdate = _extends({}, currentBookToUpdate[indexToUpdate], {
-                quantity: currentBookToUpdate[indexToUpdate].quantity + action.unit
-            });
-
-            var cartUpdate = [].concat(_toConsumableArray(currentBookToUpdate.slice(0, indexToUpdate)), [newBookToUpdate], _toConsumableArray(currentBookToUpdate.slice(indexToUpdate + 1)));
-
             return _extends({}, state, {
-                cart: cartUpdate,
-                totalAmount: totals(cartUpdate).amount,
-                totalQty: totals(cartUpdate).qty
+                cart: action.payload,
+                totalAmount: totals(action.payload).amount,
+                totalQty: totals(action.payload).qty
             });
 
             break;
@@ -50498,8 +50536,8 @@ var BookItem = function (_Component) {
                 if (cartIndex === -1) {
                     this.props.addToCart(book);
                 } else {
-                    // WE NEED A NEW REDUC
-                    this.props.updateCart(_id, 1);
+                    // WE NEED TO UPDATE QUANTITY
+                    this.props.updateCart(_id, 1, this.props.cart);
                 }
             } else {
                 // CART IS EMPTY
