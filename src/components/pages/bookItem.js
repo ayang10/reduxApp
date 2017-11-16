@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Row, Col, Well, Button} from 'react-bootstrap';
+import {Image, Row, Col, Well, Button} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 import {addToCart, updateCart} from '../../actions/cartActions';
@@ -11,6 +11,7 @@ class BookItem extends Component {
             _id: this.props._id,
             title: this.props.title,
             description: this.props.description,
+            images: this.props.images,
             price: this.props.price,
             quantity: 1
         }]
@@ -42,6 +43,9 @@ class BookItem extends Component {
         return (
             <Well>
                 <Row>
+                    <Col xs={6} sm={4}>
+                        <Image src={this.props.images} responsive />
+                    </Col>
                     <Col xs={12}>
                         <h6>{this.props.title}</h6>
                         <p>{this.props.description}</p>
